@@ -75,8 +75,31 @@ def parse_logl_from_recs(u, ul, phoneset, absl=False):
         w["alignnumframes"] = numframes
     return u
 
+def uttlindistcalc(args):
+    vfname, ufname = args
+    v = ttslab.fromfile(vfname)
+    u = ttslab.fromfile(ufname)
+    print(u["file_id"], end=" ")
+    u2 = copy.deepcopy(u)
+    u2.voice = v
+    u2 = v.resynthesize(u2, processname="utt-to-wave", htsparms={"-vp": True})
+    t = u.utt_distance(u2, method="linear")
+    t.name = u["file_id"]
+    u["lindists"] = {"utt": u2, "track": t}
+    ttslab.tofile(u, os.path.join(UTTDIR2, u["file_id"] + ".utt.pickle"))
 
-def scores(v, method="dtw"):
+def uttdtwdistcalc(args):
+    vfname, ufname = args
+    v = ttslab.fromfile(vfname)
+    u = ttslab.fromfile(ufname)
+    print(u["file_id"], end=" ")
+    u2 = v.synthesize(u["text"], "text-to-wave")
+    t = u.utt_distance(u2)
+    t.name = u["file_id"]
+    u["dtwdists"] = {"utt": u2, "track": t}
+    ttslab.tofile(u, os.path.join(UTTDIR2, u["file_id"] + ".utt.pickle"))
+
+def scores(vfname, method="dtw"):
     try:
         os.makedirs(UTTDIR2)
         indirname = UTTDIR
@@ -84,38 +107,36 @@ def scores(v, method="dtw"):
     except OSError:
         indirname = UTTDIR2
         print("Using utts in %s as input..." % UTTDIR2)
-    for uttfn in sorted(glob(os.path.join(indirname, "*"))):
-        print(uttfn)
-        u = ttslab.fromfile(uttfn)
-        if method == "linear":
-            u2 = copy.deepcopy(u)
-            u2.voice = v
-            u2 = v.resynthesize(u2, processname="utt-to-wave", htsparms={"-vp": True})
-            t = u.utt_distance(u2, method="linear")
-            t.name = u["file_id"]
-            u["lindists"] = {"utt": u2, "track": t}
-        elif method == "dtw":
-            u2 = v.synthesize(u["text"], "text-to-wave")
-            t = u.utt_distance(u2)
-            t.name = u["file_id"]
-            u["dtwdists"] = {"utt": u2, "track": t}
-        elif method == "alignlogl":
+    if method == "linear":
+        map(uttlindistcalc, [[vfname, ufname] for ufname in sorted(glob(os.path.join(indirname, "*")))])
+    elif method == "dtw":
+        map(uttdtwdistcalc, [[vfname, ufname] for ufname in sorted(glob(os.path.join(indirname, "*")))])
+    elif method == "alignlogl":
+        for uttfn in sorted(glob(os.path.join(indirname, "*"))):
+            print(uttfn)
+            u = ttslab.fromfile(uttfn)
             ul = sl.Utterance(os.path.join(RECDIR, u["file_id"] + ".rec"))
             u = parse_logl_from_recs(u, ul, v.phoneset)
-        ttslab.tofile(u, os.path.join(UTTDIR2, u["file_id"] + ".utt.pickle"))
-
+            ttslab.tofile(u, os.path.join(UTTDIR2, u["file_id"] + ".utt.pickle"))
 
 if __name__ == "__main__":
+    try:
+        import multiprocessing
+        POOL = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        def map(f, i):
+            return POOL.map(f, i, chunksize=1)
+    except ImportError:
+        pass
+
     vfname = sys.argv[1]
     procname = sys.argv[2]
 
-    v = ttslab.fromfile(sys.argv[1])
     if procname == "lindists":
-        scores(v, "linear")
+        scores(vfname, "linear")
     elif procname == "dtwdists":
-        scores(v, "dtw")
+        scores(vfname, "dtw")
     elif procname == "alignlogl":
-        scores(v, "alignlogl")
+        scores(vfname, "alignlogl")
     else:
         raise NotImplementedError
 
