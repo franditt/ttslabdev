@@ -272,7 +272,7 @@ def import_wavefiles(wav_dir, voiceroot_dir, transcriptions):
         basename = parse_path(wav_file)[2]
         if basename not in transcriptions:
             print("WARNING: '%s' not found in transcription set.." % (basename))
-        cmdstring = SOX_BIN + " %s -r 16k -c 1 -s -2 %s" % (os.path.join(wav_dir, wav_file),
+        cmdstring = SOX_BIN + " %s -r 16k -c 1 -e signed-integer -b 16 %s" % (os.path.join(wav_dir, wav_file),
                                                      os.path.join(voiceroot_dir, WAV_DIR, wav_file))
         print(cmdstring)
         os.system(cmdstring)

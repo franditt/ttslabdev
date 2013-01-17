@@ -29,21 +29,45 @@ USCATALOGUE_FILE = "data/unitcatalogue.pickle"
 
 def usfrontend():
     from ttslab.defaultvoice import LwaziUSVoice
+    from ttslab.synthesizer_us import SynthesizerUS
     voice = LwaziUSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
                          g2p=ttslab.fromfile(G2P_FILE),
                          pronundict=ttslab.fromfile(PRONUNDICT_FILE),
                          pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
-                         unitcatalogue={})
+                         synthesizer=SynthesizerUS(voice=None, unitcatalogue={}))
     ttslab.tofile(voice, "frontend.us.voice.pickle")
 
 def us():
     from ttslab.defaultvoice import LwaziUSVoice
+    from ttslab.synthesizer_us import SynthesizerUS
     voice = LwaziUSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
                          g2p=ttslab.fromfile(G2P_FILE),
                          pronundict=ttslab.fromfile(PRONUNDICT_FILE),
                          pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
-                         unitcatalogue=ttslab.fromfile(USCATALOGUE_FILE))
+                         synthesizer=SynthesizerUS(voice=None, unitcatalogue=ttslab.fromfile(USCATALOGUE_FILE)))
     ttslab.tofile(voice, "us.voice.pickle")
+
+def wordusfrontend():
+    from ttslab.defaultvoice import WordUSVoice
+    from ttslab.synthesizer_us import SynthesizerUSWordUnits
+    voice = WordUSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
+                        g2p=ttslab.fromfile(G2P_FILE),
+                        pronundict=ttslab.fromfile(PRONUNDICT_FILE),
+                        pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
+                        synthesizer=SynthesizerUSWordUnits(voice=None, unitcatalogue={}),
+                        silword="PAUSE")
+    ttslab.tofile(voice, "frontend.wordus.voice.pickle")
+
+def wordus():
+    from ttslab.defaultvoice import WordUSVoice
+    from ttslab.synthesizer_us import SynthesizerUSWordUnits
+    voice = WordUSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
+                        g2p=ttslab.fromfile(G2P_FILE),
+                        pronundict=ttslab.fromfile(PRONUNDICT_FILE),
+                        pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
+                        synthesizer=SynthesizerUSWordUnits(voice=None, unitcatalogue=ttslab.fromfile(USCATALOGUE_FILE)),
+                        silword="PAUSE")
+    ttslab.tofile(voice, "wordus.voice.pickle")
 
 def htsfrontend():
     from ttslab.defaultvoice import LwaziHTSVoice
@@ -52,7 +76,7 @@ def htsfrontend():
                           g2p=ttslab.fromfile(G2P_FILE),
                           pronundict=ttslab.fromfile(PRONUNDICT_FILE),
                           pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
-                          synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=None))
+                          synthesizer=SynthesizerHTSME(voice=None, models_dir=None))
     ttslab.tofile(voice, "frontend.hts.voice.pickle")
 
 def hts():
@@ -62,7 +86,7 @@ def hts():
                           g2p=ttslab.fromfile(G2P_FILE),
                           pronundict=ttslab.fromfile(PRONUNDICT_FILE),
                           pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
-                          synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
+                          synthesizer=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
     ttslab.tofile(voice, "hts.voice.pickle")
 
 def multihtsfrontend():
@@ -77,7 +101,7 @@ def multihtsfrontend():
                                    engg2p=ttslab.fromfile(ENGG2P_FILE),
                                    engpronundict=ttslab.fromfile(ENGPRONUNDICT_FILE),
                                    engpronunaddendum=ttslab.fromfile(ENGPRONUNADDENDUM_FILE),
-                                   synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=None))
+                                   synthesizer=SynthesizerHTSME(voice=None, models_dir=None))
     except IOError:
         voice = LwaziMultiHTSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
                                    g2p=ttslab.fromfile(G2P_FILE),
@@ -87,7 +111,7 @@ def multihtsfrontend():
                                    engg2p=ttslab.fromfile(ENGG2P_FILE),
                                    engpronundict=ttslab.fromfile(ENGPRONUNDICT_FILE),
                                    engpronunaddendum={},
-                                   synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=None))
+                                   synthesizer=SynthesizerHTSME(voice=None, models_dir=None))
     ttslab.tofile(voice, "frontend.multihts.voice.pickle")
 
 def multihts():
@@ -102,7 +126,7 @@ def multihts():
                                    engg2p=ttslab.fromfile(ENGG2P_FILE),
                                    engpronundict=ttslab.fromfile(ENGPRONUNDICT_FILE),
                                    engpronunaddendum=ttslab.fromfile(ENGPRONUNADDENDUM_FILE),
-                                   synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
+                                   synthesizer=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
     except IOError:
         voice = LwaziMultiHTSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
                                    g2p=ttslab.fromfile(G2P_FILE),
@@ -112,32 +136,7 @@ def multihts():
                                    engg2p=ttslab.fromfile(ENGG2P_FILE),
                                    engpronundict=ttslab.fromfile(ENGPRONUNDICT_FILE),
                                    engpronunaddendum={},
-                                   synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
-    ttslab.tofile(voice, "multihts.voice.pickle")
-
-def multihtszulu():
-    from ttslab.voices.zulu_default import LwaziZuluMultiHTSVoice
-    from ttslab.synthesizer_htsme import SynthesizerHTSME
-    try:
-        voice = LwaziZuluMultiHTSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
-                                       g2p=ttslab.fromfile(G2P_FILE),
-                                       pronundict=ttslab.fromfile(PRONUNDICT_FILE),
-                                       pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
-                                       engphoneset=ttslab.fromfile(ENGPHONESET_FILE),
-                                       engg2p=ttslab.fromfile(ENGG2P_FILE),
-                                       engpronundict=ttslab.fromfile(ENGPRONUNDICT_FILE),
-                                       engpronunaddendum=ttslab.fromfile(ENGPRONUNADDENDUM_FILE),
-                                       synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
-    except IOError:
-        voice = LwaziZuluMultiHTSVoice(phoneset=ttslab.fromfile(PHONESET_FILE),
-                                       g2p=ttslab.fromfile(G2P_FILE),
-                                       pronundict=ttslab.fromfile(PRONUNDICT_FILE),
-                                       pronunaddendum=ttslab.fromfile(PRONUNADDENDUM_FILE),
-                                       engphoneset=ttslab.fromfile(ENGPHONESET_FILE),
-                                       engg2p=ttslab.fromfile(ENGG2P_FILE),
-                                       engpronundict=ttslab.fromfile(ENGPRONUNDICT_FILE),
-                                       engpronunaddendum={},
-                                       synthesizer_hts=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
+                                   synthesizer=SynthesizerHTSME(voice=None, models_dir=os.path.join(os.getcwd(), HTSMODELS_DIR)))
     ttslab.tofile(voice, "multihts.voice.pickle")
 
 
@@ -152,7 +151,7 @@ def frontend():
 
 if __name__ == "__main__":
     try:
-        switches = ["frontend", "usfrontend", "htsfrontend", "us", "hts", "multihtsfrontend", "multihts"]
+        switches = ["frontend", "usfrontend", "htsfrontend", "wordusfrontend", "us", "wordus", "hts", "multihtsfrontend", "multihts"]
         switch = sys.argv[1]
         assert switch in switches
     except IndexError:
@@ -165,6 +164,10 @@ if __name__ == "__main__":
         usfrontend()
     elif switch == "us":
         us()
+    elif switch == "wordusfrontend":
+        wordusfrontend()
+    elif switch == "wordus":
+        wordus()
     elif switch == "htsfrontend":
         htsfrontend()
     elif switch == "hts":
