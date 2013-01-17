@@ -138,7 +138,11 @@ class GenHAlign(object):
         self.transmap_location = self.getParm("SOURCE", "PHONETIC_TRANSCRIPTIONS_MAP")
         if self.transmap_location:
             self.transmap_location = self.getParm("SOURCE", "PHONETIC_TRANSCRIPTIONS_MAP", path=True)
-        
+
+        self.bootmodels_location = self.getParm("SOURCE", "BOOT_MODELS")
+        if self.bootmodels_location:
+            self.bootmodels_location = self.getParm("SOURCE", "BOOT_MODELS", path=True)
+
         self.boottranscr_location = self.getParm("SOURCE", "BOOT_TRANSCRIPTIONS")
         if self.boottranscr_location:
             self.boottranscr_location = self.getParm("SOURCE", "BOOT_TRANSCRIPTIONS", path=True)
@@ -165,6 +169,11 @@ class GenHAlign(object):
             self.have_phonetic = True
         else:
             self.have_phonetic = False
+
+        if bool(self.bootmodels_location):
+            self.have_bootmodels = True
+        else:
+            self.have_bootmodels = False
 
         if bool(self.boottranscr_location) and bool(self.bootaudio_location):
             self.have_bootdata = True
@@ -239,7 +248,10 @@ class GenHAlign(object):
         log.info("Removing 'models' and 'feats' dirs.")
 
         shutil.rmtree(self.feats_dir)
-        shutil.rmtree(self.bootfeats_dir)
+        try:
+            shutil.rmtree(self.bootfeats_dir)
+        except OSError:
+            pass
         shutil.rmtree(self.models_dir)
         
 
@@ -292,8 +304,8 @@ class GenHAlign(object):
         else:
             log.error("Transcriptions not sufficiently defined. Check configuration file.")
             raise Exception("Transcriptions not sufficient...")
-
-        if self.have_bootdata:
+        
+        if not self.have_bootmodels and self.have_bootdata:
             self.makeBootTranscriptions()
 
 
@@ -419,8 +431,7 @@ class GenHAlign(object):
         #make features...
         self.audiofeats.makeFeats(self.feats_dir)
 
-
-        if self.have_bootdata:
+        if not self.have_bootmodels and self.have_bootdata:
             log.info("Making boot feats.")
             self.bootfeats = AudioFeatures(self.bootaudio_location, self.featconf_location)
             if not self.boottranscr.allLabelsInTranscr(self.bootfeats):
@@ -445,7 +456,15 @@ class GenHAlign(object):
                              self.featconf_location,
                              self.feats_dir)
     
-        if self.have_bootdata:
+        if self.have_bootmodels:
+            print("COPYING BOOTSTRAP MODELS...(NO VARIANCE FLOOR SET...)")
+            if self.mappedbootstrap:
+                log.info("Copying mapped bootstrap models.")
+                self.models.copyBootmodels(self.bootmodels_location, True, self.phonetranscr)
+            else:
+                log.info("Copying bootstrap models directly.")
+                self.models.copyBootmodels(self.bootmodels_location, False)
+        elif self.have_bootdata:
             print("BOOTSTRAP...(NO VARIANCE FLOOR SET...)")
             if self.mappedbootstrap:
                 log.info("Performing mapped-bootstrapping.")

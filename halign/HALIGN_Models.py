@@ -15,7 +15,8 @@ import re
 import logging
 import subprocess
 import shutil
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
+import tarfile
 from ConfigParser import ConfigParser
 
 from speechlabels import parse_path, type_files, triphone_2_monophone
@@ -98,7 +99,6 @@ class HMMSet(object):
                     pass    
 
 
-
     def _loadFeatConf(self, location):
         """ Load configuration needed for feature interpretation...
         """
@@ -155,11 +155,46 @@ class HMMSet(object):
                 for phone in self.phonelist:
                     outfh.write(phone + "\n")
 
+    def copyBootmodels(self, bootmodels_location, mapnames, transcriptionset=False):
+        assert self.iteration == 0, "Can only do this as first training iteration..."
+        tempdir = mkdtemp(prefix="halign_")
+        t = tarfile.open(bootmodels_location, "r:*")
+        t.extractall(tempdir)
+        hmmdir = os.path.join(self.targetlocation, HMM_DIR + unicode(self.iteration + 1)) #hmm1
+        os.makedirs(hmmdir)
+        if mapnames == False:
+            for fn in glob(os.path.join(tempdir, "*")):
+                shutil.copy(fn, hmmdir)
+        else:
+            for phone in self.phonelist:
+                with open(os.path.join(tempdir, transcriptionset.phonemap[phone])) as infh:
+                    modeldef = infh.read()
+                modeldef = re.sub('"%s"' % (transcriptionset.phonemap[phone]), '"%s"' % (phone), modeldef)
+                with open(os.path.join(hmmdir, phone), "w") as outfh:
+                    outfh.write(modeldef)
+            shutil.copy(os.path.join(tempdir, MACROS_FN), os.path.join(hmmdir, MACROS_FN))
+        with open(os.path.join(hmmdir, MACROS_FN)) as infh:
+            macropart = infh.readlines()
+        with codecs.open(os.path.join(hmmdir, HMMDEFS_FN), "w", encoding="utf-8") as outfh:
+            outfh.writelines(macropart)
+            for phone in self.phonelist:
+                inhmm = False
+                with codecs.open(os.path.join(hmmdir, phone), encoding="utf-8") as infh:
+                    for line in infh:
+                        if line.strip().upper().startswith("~H"):
+                            outfh.write(line)
+                            inhmm = True
+                            continue
+                        if inhmm:
+                            outfh.write(line)
+        #done!
+        shutil.rmtree(tempdir)
+        self.iteration += 1
+
 
     def mappedBootstrapAll(self, bootmlf_location, bootfeats_location, transcriptionset):
         """ calls doBootstrapAll for mapped bootstrapping...
         """
-        
         self.doBootstrapAll(bootmlf_location, bootfeats_location, transcriptionset)
 
 
