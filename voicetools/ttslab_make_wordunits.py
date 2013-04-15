@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" Creates a ttslab halfphone catalogue using aligned utterances and
+""" Creates a ttslab word unit catalogue using aligned utterances and
     corresponding wave files...
 
     DEMITASSE: THIS NEEDS A SERIOUS REWRITE...
@@ -51,7 +51,7 @@ JOIN_EXT = "join"
 PM_EXT = "pm"
 F0_EXT = "f0"
 
-NAME = "ttslab_make_halfphones.py"
+NAME = "ttslab_make_wordunits.py"
 SIG2FV_BIN = "sig2fv"
 SIGFILTER_BIN = "sigfilter"
 
@@ -81,6 +81,10 @@ def add_feats_to_utt(args):
     file_id = u["file_id"]
     print("Processing:", file_id)
     u.fill_startendtimes()
+    for unit, word in zip(u.gr("Unit"), u.gr("Word")):
+        assert unit["name"] == word["name"]
+        unit["start"] = word["start"]
+        unit["end"] = word["end"]
 
     lpctrack = Track()
     lpctrack.load_track(".".join([os.path.join(lpc_dir, file_id), LPC_EXT]))
@@ -92,47 +96,19 @@ def add_feats_to_utt(args):
 
     #get boundarytimes:
     boundarytimes = []
-    durations = []
-    starttime = 0.0
-    for seg in u.get_relation("Segment"):
-        endtime = float(seg["end"])
-        if "cl_end" in seg:
-            splittime = float(seg["cl_end"])
-        else:
-            splittime = (endtime + starttime) / 2
-            #TODO: should still add 25% split if diphthong...
-        boundarytimes.append([starttime, splittime, endtime])
-        durations.extend([splittime - starttime, endtime - splittime])
-        starttime = endtime
+    for i, unit in enumerate(u.gr("Unit")):
+        if i == 0:
+            boundarytimes.append(unit["start"])
+        boundarytimes.append(unit["end"])
 
-    #convert boundtimes into sample ranges (and flatten):
+    #convert boundtimes into sample ranges:
     lpcsampleranges = []
     f0sampleranges = []
     joinsamples = []
-
-    #DEMITASSE: If not pruning pau halfphones:
-    # for bounds in boundarytimes:
-    #     lpcsampleranges.extend([lpctrack.get_index_at(bounds[0]),
-    #                             lpctrack.get_index_at(bounds[1])])
-    #     joinsamples.extend([jointrack.get_sample_at(bounds[0]),
-    #                         jointrack.get_sample_at(bounds[1])])
-    # lpcsampleranges.append(len(lpctrack))
-    # joinsamples.append(jointrack.get_sample_at(len(jointrack)))
-
-    #DEMITASSE: If pruning pau halfphones:
-    durations = durations[1:-1]
-    for i, bounds in enumerate(boundarytimes):
-        if i == 0:
-            lpcsampleranges.append(lpctrack.index_at(bounds[1]))
-            f0sampleranges.append(f0track.index_at(bounds[1]))
-            joinsamples.append(jointrack.values[bounds[1]])
-        else:
-            lpcsampleranges.extend([lpctrack.index_at(bounds[0]),
-                                    lpctrack.index_at(bounds[1])])
-            f0sampleranges.extend([f0track.index_at(bounds[0]),
-                                   f0track.index_at(bounds[1])])
-            joinsamples.extend([jointrack.values[bounds[0]],
-                                jointrack.values[bounds[1]]])
+    for bound in boundarytimes:
+        lpcsampleranges.append(lpctrack.index_at(bound))
+        f0sampleranges.append(f0track.index_at(bound))
+        joinsamples.append(jointrack.values[jointrack.index_at(bound)])
 
     #get pitchperiods at lpc indices
     lpctimes = np.concatenate(([0.0], lpctrack.times))
@@ -141,11 +117,10 @@ def add_feats_to_utt(args):
     units = u.get_relation("Unit").as_list()
     
     assert len(units) == len(lpcsampleranges) - 1
-    for jc0, jc1, lti0, lti1, fti0, fti1, dur, i in zip(joinsamples[:-1], joinsamples[1:],
-                                                        lpcsampleranges[:-1], lpcsampleranges[1:],
-                                                        f0sampleranges[:-1], f0sampleranges[1:],
-                                                        durations,
-                                                        units):
+    for jc0, jc1, lti0, lti1, fti0, fti1, i in zip(joinsamples[:-1], joinsamples[1:],
+                                                   lpcsampleranges[:-1], lpcsampleranges[1:],
+                                                   f0sampleranges[:-1], f0sampleranges[1:],
+                                                   units):
 #        print(i["name"], "lpctrack[%s:%s]" % (lti0, lti1), "len(lpctrack)=%s" % len(lpctrack))
         i["left-joincoef"] = jc0
         i["right-joincoef"] = jc1
@@ -155,7 +130,6 @@ def add_feats_to_utt(args):
         else:
             i["lpc-coefs"].starttime = lpctrack.times[lti0 - 1]
         i["lpc-coefs"].zero_starttime()
-        i["dur"] = dur
         #For windowfactor=2 (save only samples and assume 16kHz)
         i["residuals"] = restrack.slice(restrack.index_at(lpctrack.times[lti0] - pitchperiod[lti0]),
                                         restrack.index_at(lpctrack.times[lti1] + pitchperiod[lti0])).values
@@ -508,7 +482,7 @@ def main():
         featconfpath = sys.argv[2]
         switch = sys.argv[3]
      except IndexError:
-         print("USAGE: ttslab_make_halfphones.py VOICEFILE FEATSCONF [auto | make_features | make_catalogue]")
+         print("USAGE: ttslab_make_wordunits.py VOICEFILE FEATSCONF [auto | make_features | make_catalogue]")
          sys.exit()
 
      voice = ttslab.fromfile(voicefile)
@@ -525,7 +499,7 @@ def main():
          else:
              raise CLIException
      except CLIException:
-         print("USAGE: ttslab_make_halfphones.py VOICEFILE FEATSCONF [auto | make_features | make_catalogue]")
+         print("USAGE: ttslab_make_wordunits.py VOICEFILE FEATSCONF [auto | make_features | make_catalogue]")
     
 
 if __name__ == "__main__":

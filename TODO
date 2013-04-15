@@ -1,2 +1,4 @@
  - Write basic documentation describing usage.
  - Add voice templates.
+ - clean up ttslab_make_voice.py script (don't need seperate HTS and
+  HTS frontend voices)
