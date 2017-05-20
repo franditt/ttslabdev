@@ -47,7 +47,7 @@
 ######################################################################################
 ## $Id:: make_f0_praat.py 5077 2006-09-15 10:11:09Z aby                           $ ##
 
-import os,sys,commands,math;
+import os,sys,subprocess,math;
 from tempfile import mkstemp
 
 class f0filler:       
@@ -83,8 +83,7 @@ class f0filler:
 
         fd, tmp = mkstemp()
 
-        command_string = "praat " + f0script + " " + wavefile + " " + tmp;
-        commands.getoutput(command_string);
+        command_string = ["praat", f0script, wavefile, tmp];
 
         f=open(tmp,"r");
         praat_output=f.readlines();
