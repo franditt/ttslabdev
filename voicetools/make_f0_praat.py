@@ -84,7 +84,8 @@ class f0filler:
         fd, tmp = mkstemp()
 
         command_string = ["praat", f0script, wavefile, tmp];
-
+        subprocess.call(command_string)
+        
         f=open(tmp,"r");
         praat_output=f.readlines();
         f.close();
