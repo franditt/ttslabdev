@@ -546,6 +546,7 @@ def alignments_from_textgrid(voice):
 
     #################
     for sc_utt, uttname, wavfilename in zip(alignments.utterances, sorted(transcriptions), sorted(glob(os.path.join(wav_dir, "*")))):
+        print(sc_utt.name + " " + uttname)
         assert sc_utt.name == uttname, "Utterance missmatch..."
         assert os.path.basename(wavfilename).startswith(uttname), "Utterance missmatch..."
 

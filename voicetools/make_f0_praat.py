@@ -83,7 +83,8 @@ class f0filler:
 
         fd, tmp = mkstemp()
 
-        command_string = ["praat", f0script, wavefile, tmp];
+        command_string = ["/home/justyna/Documents/tts/dependencies/praat", f0script, wavefile, tmp];
+        subprocess.call(command_string)
 
         f=open(tmp,"r");
         praat_output=f.readlines();

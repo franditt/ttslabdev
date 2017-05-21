@@ -26,7 +26,7 @@ ETC_DIR = "etc"
 WAV_DIR = "wavs"
 
 SOX_BIN = "sox"
-NORMALIZE_AUDIO_BIN = "normalize-audio"
+NORMALIZE_AUDIO_BIN = "normalize"
 
 ########################################
 ## SIMPLE FUNCTIONS
