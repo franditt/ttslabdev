@@ -17,7 +17,7 @@ import subprocess
 import struct
 from tempfile import NamedTemporaryFile
 
-PRAAT_BIN = "/home/justyna/Documents/tts/dependencies/praat"
+PRAAT_BIN = "~/Documents/tts/dependencies/praat"
 SIG2FV_BIN = "/home/demitasse/LOCAL/bin/sig2fv"
 PRAAT_GET_PM = \
 """#
